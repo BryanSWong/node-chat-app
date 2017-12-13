@@ -8,20 +8,20 @@ socket.on('connect', function () {
     //     text: 'hi how are you?'
     // });
 
-    socket.on('newMessage', function (message) {
-        console.log('New message received', message);
-    });
-
-    socket.emit('createMessage', {
-        from: 'somedude@example.com',
-        text: 'doing great how are you?'
-    });
+    // socket.emit('createMessage', {
+    //     from: 'somedude@example.com',
+    //     text: 'doing great how are you?'
+    // });
 
 
 });
 
 socket.on('disconnect', function () {
     console.log('disconnected from server');
+});
+
+socket.on('newMessage', function (message) {
+    console.log('New message received', message);
 });
 
 // socket.on('newEmail', function (email) {
