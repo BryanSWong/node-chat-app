@@ -2,18 +2,6 @@ let socket = io();
 
 socket.on('connect', function () {
     console.log('connected to server');
-
-    // socket.emit('createEmail', {
-    //     to: 'somedude@example.com',
-    //     text: 'hi how are you?'
-    // });
-
-    // socket.emit('createMessage', {
-    //     from: 'somedude@example.com',
-    //     text: 'doing great how are you?'
-    // });
-
-
 });
 
 socket.on('disconnect', function () {
@@ -21,9 +9,9 @@ socket.on('disconnect', function () {
 });
 
 socket.on('newMessage', function (message) {
-    console.log('New message received', message);
+    let formattedTime = moment(message.createdAt).format('h:mm a');
     let li = jQuery('<li></li>');
-    li.text(`${message.from}: ${message.text}`);
+    li.text(`${message.from} ${formattedTime}: ${message.text}`);
 
     jQuery('#messages').append(li);
 });
@@ -43,10 +31,11 @@ jQuery('#message-form').on('submit', function(e){
 });
 
 socket.on('newLocationMessage', function (message) {
+    let formattedTime = moment(message.createdAt).format('h:mm a');
     let li = jQuery('<li></li>');
     let a = jQuery('<a target="_blank">My current location</a>');
 
-    li.text(`${message.from}: `);
+    li.text(`${message.from} ${formattedTime}: `);
     a.attr('href', message.url);
     li.append(a);
     jQuery('#messages').append(li);
@@ -72,6 +61,16 @@ locationButton.on('click', function () {
         alert('Unable to fetch location').text('Send location');
     });
 });
+
+// socket.emit('createEmail', {
+//     to: 'somedude@example.com',
+//     text: 'hi how are you?'
+// });
+
+// socket.emit('createMessage', {
+//     from: 'somedude@example.com',
+//     text: 'doing great how are you?'
+// });
 
 // socket.on('newEmail', function (email) {
 //     console.log('new email', email);
