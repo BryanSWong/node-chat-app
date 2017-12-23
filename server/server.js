@@ -4,36 +4,35 @@ const express = require('express');
 const socketIO = require('socket.io');
 
 const {generateMessage, generateLocationMessage} = require('./utils/message');
+const {isRealString} = require('./utils/validation');
+const {Users} = require('./utils/users');
+
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
 let app = express();
 let server = http.createServer(app);
 let io = socketIO(server);
+let users = new Users();
 
 app.use(express.static(publicPath));
 
 io.on('connection', (socket) => {
     console.log('New user connected');
+    
+    socket.on('join', (params, callback) => {
+        if(!isRealString(params.name) || ! isRealString(params.room)){
+            return callback('Name and room name are required.');
+        }
 
-    // socket.emit('newEmail', {
-    //     from: 'someguy@example.com',
-    //     text: 'hi how are you?',
-    //     createdAt: 123
-    // });
+        socket.join(params.room);
+        users.removeUser(socket.id);
+        users.addUser(socket.id, params.name, params.room);
+        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
+        socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
+        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
 
-    // socket.emit('newMessage', {
-    //     from: 'someguy@example.com',
-    //     text: 'hi all! :D',
-    //     createdAt: 123
-    // });
-
-    // socket.on('createEmail', (newEmail) => {
-    //     console.log('createEmail', newEmail);
-    // });
-
-    socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
-
-    socket.broadcast.emit('newMessage', generateMessage('Admin','New user has joined'));
+        callback();
+    });
 
     socket.on('createMessage', (message, callback) => {
         console.log('New message', message);
@@ -46,10 +45,40 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('client disconnected');
+        let user = users.removeUser(socket.id);
+
+        if(user) {
+            io.to(user.room).emit('updateUserList', users.getUserList(user.room));
+            io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left`));
+        }
     });
 });
 
 server.listen(port, () => {
     console.log(`Started on port ${port}`);
 });
+
+// socket.emit('newEmail', {
+//     from: 'someguy@example.com',
+//     text: 'hi how are you?',
+//     createdAt: 123
+// });
+
+// socket.emit('newMessage', {
+//     from: 'someguy@example.com',
+//     text: 'hi all! :D',
+//     createdAt: 123
+// });
+
+// socket.on('createEmail', (newEmail) => {
+//     console.log('createEmail', newEmail);
+// });
+
+
+//socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
+
+// socket.broadcast.emit('newMessage', generateMessage('Admin','New user has joined'));
+
+// targeting rooms
+// io.emit --> io.to(params.room).emit
+// socket.broadcast.emit --> socket.broadcast.to(params.room).emit
