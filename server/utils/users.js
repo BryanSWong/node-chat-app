@@ -1,10 +1,8 @@
-[{
-    id: 'abcefghijk',
-    name: 'SomeGuy',
-    room: 'hangouts'
-}]
-
-
+// [{
+//     id: 'abcefghijk',
+//     name: 'SomeGuy',
+//     room: 'hangouts'
+// }]
 
 class Users {
     constructor(){
@@ -12,7 +10,7 @@ class Users {
     }
 
     addUser (id, name, room) {
-        let user ={id, name, room}
+        let user ={id, name, room};
         this.users.push(user);
         return user
     };
@@ -40,9 +38,7 @@ class Users {
 
 }
 
-
 module.exports = {Users};
-
 
 // class Person {
 //     constructor(name, age){

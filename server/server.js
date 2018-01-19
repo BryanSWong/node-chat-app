@@ -6,6 +6,7 @@ const socketIO = require('socket.io');
 const {generateMessage, generateLocationMessage} = require('./utils/message');
 const {isRealString} = require('./utils/validation');
 const {Users} = require('./utils/users');
+const {Rooms} = require('./utils/rooms');
 
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ let app = express();
 let server = http.createServer(app);
 let io = socketIO(server);
 let users = new Users();
+let rooms = new Rooms();
 
 app.use(express.static(publicPath));
 
@@ -20,16 +22,35 @@ io.on('connection', (socket) => {
     console.log('New user connected');
     
     socket.on('join', (params, callback) => {
-        if(!isRealString(params.name) || ! isRealString(params.room)){
+        let room = params.room.toLowerCase(); // lets anybody join room regardless of case.
+        let name = params.name.toLowerCase().replace(/\b[a-z]/g, function(letter) {
+            return letter.toUpperCase();
+        }); // makes the the names unique even with different casing and caps the first letter.
+
+        if(!isRealString(name) || ! isRealString(room)){
             return callback('Name and room name are required.');
         }
 
-        socket.join(params.room);
+        let people = users.getUserList(room);
+
+        for(i = 0; i < people.length; i++) {
+            if(people[i] === name){
+                return callback('Name is in use, please use another.');
+            }
+        }
+
+        //let select = jQuery('<select></select>');
+        // users.forEach(function (user) {
+        //     select.append(jQuery('<option></option>').text(user.room));
+        // });
+        // jQuery('#a_room').html(select);
+
+        socket.join(room);
         users.removeUser(socket.id);
-        users.addUser(socket.id, params.name, params.room);
-        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
+        users.addUser(socket.id, name, room);
+        io.to(room).emit('updateUserList', users.getUserList(room));
         socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
-        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined`));
+        socket.broadcast.to(room).emit('newMessage', generateMessage('Admin', `${name} has joined`));
 
         callback();
     });
